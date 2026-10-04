@@ -21,10 +21,11 @@ body { max-width: var(--width); padding: 0 24px 32px; }
 .feed-panel[hidden] { display: none !important; }
 .site-navigation .feed-tab { transition: background-color 180ms ease, color 180ms ease; }
 .feed-panel.is-entering { animation: feed-enter 220ms cubic-bezier(.2, .7, .2, 1); }
+.posts-feed.is-entering { animation: feed-enter 180ms ease-out; }
 @keyframes feed-enter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @media (prefers-reduced-motion: reduce) {
   .site-navigation .feed-tab { transition: none; }
-  .feed-panel.is-entering { animation: none; }
+  .feed-panel.is-entering, .posts-feed.is-entering { animation: none; }
 }
 .feed-panel > .news-pagination:first-child { margin: 0 0 20px; border-top: 0; padding-top: 0; }
 .feed-note { margin: 0 0 18px; color: var(--muted-color); font-size: 12px; line-height: 1.7; }
@@ -43,17 +44,21 @@ body.feed .post-content .selected-badge { margin: auto 0 0; padding-top: 12px; c
 .feed-details summary { width: fit-content; cursor: pointer; }
 .feed-details[open] .feed-hint { margin-top: 8px; }
 .feed-sync { color: #176b64; }
-.feed-sync.sync-warning { color: #9a4b0b; }
+.feed-sync.sync-warning, .full-sync.sync-warning { color: #9a4b0b; }
 .feed-hint { color: var(--muted-color); }
 .news-pagination { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
-.selected-results > .selected-pagination:first-child, .full-toolbar + .news-pagination { margin-top: 0; border-top: 0; padding-top: 0; }
+.selected-results > .news-pagination:first-child, .full-results > .news-pagination:first-child, .full-toolbar + .news-pagination { margin-top: 0; border-top: 0; padding-top: 0; }
 .news-pagination > .page-button:first-child { justify-self: start; }
 .news-pagination > .page-button:nth-child(3) { justify-self: end; }
-.page-numbers { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; min-height: 44px; }
+.page-numbers { grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; min-height: 44px; max-width: 100%; overflow-x: auto; padding-bottom: 4px; }
+.page-numbers > * { flex-shrink: 0; }
+.page-tools { grid-column: 1 / -1; display: flex; justify-content: center; align-items: center; gap: 8px; }
+.page-jump { min-height: 44px; max-width: 130px; padding: 0 10px; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; color: var(--accent-color); font: inherit; font-size: 13px; }
+.page-jump:focus-visible { outline: 3px solid var(--accent-color); outline-offset: 3px; }
 .page-number { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; border: 1px solid var(--border-color); border-radius: 8px; color: #176b64; background: #fff; text-decoration: none; font-size: 14px; }
 .page-number[aria-current="page"] { background: #176b64; border-color: #176b64; color: #fff; font-weight: 700; }
 .news-pagination .page-status { box-sizing: border-box; width: 210px; padding: 10px 14px; border-radius: 10px; background: #e0efec; color: #124c47; font-size: 20px; font-weight: 750; }
-.news-pagination .page-status small { min-height: 32px; margin-top: 3px; color: #526c69; }
+.news-pagination .page-status small { height: 36px; min-height: 36px; line-height: 18px; margin-top: 3px; color: #526c69; }
 .feed-refresh:focus-visible, .news-pagination a:focus-visible { outline: 3px solid #176b64; outline-offset: 3px; }
 .feed-empty { grid-column: 1 / -1; padding: 28px 20px; text-align: center; border: 1px dashed #bfd4d0; border-radius: 12px; }
 .desktop-search, .mobile-search form { border-radius: 9px; }
@@ -96,6 +101,7 @@ body.feed .link_preview_site_name { display: block; margin-bottom: 8px; color: v
   .feed-heading h2 { font-size: 18px; }
   .news-pagination .page-status { width: 130px; padding: 8px 10px; font-size: 18px; }
   .news-pagination .page-status { min-width: 96px; }
+  .news-pagination .page-status small { height: 54px; min-height: 54px; }
   body { padding: 0 16px 24px; }
   .site-header { padding: 20px 0 16px; }
   .site-header { grid-template-columns: 38px minmax(0, 1fr) auto; gap: 12px; }

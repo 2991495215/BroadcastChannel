@@ -6,11 +6,13 @@ services:
       - "127.0.0.1:4321:4321"
     volumes:
       - ./broadcastchannel.css:/app/dist/client/news.css:ro
+      - ./broadcastchannel-logo.jpg:/app/dist/client/news-logo.jpg:ro
       - ./broadcastchannel.js:/app/dist/client/news.js:ro
+      - ./broadcastchannel-home.mjs:/app/dist/server/chunks/index_BRGBbngx.mjs:ro
       - ../output/broadcast-public:/app/dist/client/news-data:ro
     environment:
       CHANNEL: ${CHANNEL:?Set a public Telegram channel username}
       TELEGRAM: ${CHANNEL}
       LOCALE: zh-CN
       TIMEZONE: Asia/Shanghai
-      HEADER_INJECT: '<link rel="stylesheet" href="/themes/polar.css"><link rel="stylesheet" href="/news.css?v=20261005-5"><script src="/news.js?v=20261005-5" defer></script>'
+      HEADER_INJECT: '<link rel="stylesheet" href="/themes/polar.css"><link rel="stylesheet" href="/news.css?v=20261005-9"><script src="/news.js?v=20261005-9" defer></script>'

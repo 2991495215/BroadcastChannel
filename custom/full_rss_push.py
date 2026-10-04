@@ -154,18 +154,34 @@ def send(items):
 
 
 def export_selected():
+    """Publish both views from the local queue, independent of Telegram."""
     destination = os.getenv("FULL_RSS_PUBLIC_DIR")
     if not destination:
         return
     threshold = forum_stream.min_score()
-    # ponytail: expose only the latest 200 scored forum entries; add pagination if needed.
+    directory = Path(destination)
+    history_path = directory / "channel-history.json"
+    history = json.loads(history_path.read_text(encoding="utf-8"))["items"] if history_path.exists() else []
+    source_aliases = {
+        "LinuxDo 最新": "linuxdo", "LINUX DO": "linuxdo", "LinuxDo论坛": "linuxdo",
+        "NodeSeek 最新": "nodeseek", "NodeSeek": "nodeseek", "NodeSeek论坛": "nodeseek",
+        "奶昔论坛 最新": "naixi", "forum.naixi.net": "naixi",
+        "LowEndTalk": "lowendtalk", "LowEndTalk论坛": "lowendtalk",
+        "V2EX｜技术": "v2ex", "V2EX": "v2ex", "V2EX技术": "v2ex",
+    }
+    def key(item):
+        source = item.get("source", "")
+        return (source_aliases.get(source, source), item.get("published", ""))
+    historical = {}
+    for old in history:
+        historical.setdefault(key(old), []).append(old)
     c = sqlite3.connect(f"{STATE.resolve().as_uri()}?mode=ro", uri=True, timeout=30)
     try:
-        rows = c.execute("SELECT payload,score,tag FROM forum_ai_queue WHERE score>=? ORDER BY discovered_at DESC,id DESC LIMIT 200", (threshold,)).fetchall()
+        rows = c.execute("SELECT id,payload,score,tag,discovered_at FROM forum_ai_queue ORDER BY discovered_at DESC,id DESC").fetchall()
     finally:
         c.close()
-    items = []
-    for payload, score, tag in rows:
+    items, matched, urls = [], set(), set()
+    for identity, payload, score, tag, discovered in rows:
         p = json.loads(payload)
         try:
             url = urlsplit(p.get("url", ""))
@@ -173,18 +189,45 @@ def export_selected():
             continue
         if url.scheme.lower() not in {"http", "https"} or not url.netloc:
             continue
+        canonical = canonical_url(p["url"])
+        if canonical in urls:
+            continue
+        urls.add(canonical)
+        # Channel previews truncate titles at punctuation; match only unique prefixes at the same source/time.
+        title = html.unescape(p.get("title", "")).strip()
+        candidates = [old for old in historical.get(key(p), [])
+                      if old.get("title", "").strip() and title.startswith(html.unescape(old["title"]).strip())]
+        old = candidates[0] if len(candidates) == 1 else None
+        if old:
+            matched.add(old["id"])
         items.append({
-            "title": p.get("title", ""), "url": p["url"],
+            "id": f"rss:{identity}", "title": p.get("title", ""), "url": canonical,
             "source": p.get("source", ""), "published": p.get("published", ""),
             "summary": html.unescape(strip_markdown(p.get("summary", "")))[:1000],
-            "score": score, "tag": tag,
+            "score": score, "tag": tag or "", "origin": "rss",
+            "discovered_at": discovered, "channel_url": old["url"] if old else None,
         })
-    directory = Path(destination)
+    for old in history:
+        if old["id"] not in matched:
+            items.append({**old, "score": None, "tag": "", "origin": "channel-history"})
+    def timestamp(item):
+        try:
+            value = datetime.fromisoformat(item.get("published", ""))
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=ZoneInfo("Asia/Shanghai"))
+            return value.timestamp()
+        except (ValueError, TypeError):
+            return item.get("discovered_at", 0)
+    items.sort(key=lambda item: (timestamp(item), str(item["id"])), reverse=True)
+    selected = [item for item in items if isinstance(item["score"], (int, float)) and threshold <= item["score"] <= 1]
+    updated = datetime.now(ZoneInfo("Asia/Shanghai")).isoformat()
     directory.mkdir(parents=True, exist_ok=True)
-    temporary = directory / "selected.json.tmp"
-    temporary.write_text(json.dumps({"updated_at": datetime.now(ZoneInfo("Asia/Shanghai")).isoformat(),
-                                     "min_score": threshold, "items": items}, ensure_ascii=False), encoding="utf-8")
-    temporary.replace(directory / "selected.json")
+    for name, entries in (("all", items), ("selected", selected)):
+        temporary = directory / f"{name}.json.tmp"
+        temporary.write_text(json.dumps({"updated_at": updated, "min_score": threshold,
+                                         "complete": True, "source": "backend-rss", "items": entries}, ensure_ascii=False), encoding="utf-8")
+        temporary.replace(directory / f"{name}.json")
+    print(f"[网站消息] 全量 {len(items)} 条，精选 {len(selected)} 条，共用后台数据", flush=True)
 
 
 
@@ -236,6 +279,11 @@ def poll(first):
         except Exception as ex:
             print(f"[全量RSS] {name} 抓取失败: {ex}", flush=True)
     c.commit(); c.close()
+    if forum_stream.enabled():
+        try:
+            export_selected()  # Publish before Telegram and AI; neither blocks website messages.
+        except Exception as ex:
+            print(f"[网站消息] 导出失败: {type(ex).__name__}", flush=True)
     fresh.sort(key=lambda item: tuple(item[1].get("published_parsed") or item[1].get("updated_parsed") or ()))
     try:
         if fresh: send(fresh)
