@@ -61,6 +61,7 @@
     navigation.setAttribute('aria-label', '消息类型');
   }
   const tabs = [];
+  let fullPageNumber = 1;
   for (const [label, href, id] of [
     ['全量消息', '/', 'full'],
     ['精选消息', '/?view=selected', 'selected'],
@@ -84,7 +85,20 @@
       // ponytail: Telegram uses cursors, not stable numbered pages; count this browsing sequence only.
       const params = new URLSearchParams(location.search);
       const raw = selected ? null : params.get('page');
-      const number = location.pathname === '/' ? 1 : (/^[1-9]\d{0,5}$/.test(raw || '') ? Number(raw) : null);
+      params.delete('page');
+      params.delete('view');
+      const key = `broadcastchannel:page:${location.pathname}?${params}`;
+      let saved;
+      try { saved = sessionStorage.getItem(key); } catch {}
+      const validPage = value => /^[1-9]\d{0,5}$/.test(value || '');
+      const number = location.pathname === '/' ? 1 : Number(validPage(raw) ? raw : validPage(saved) ? saved : 1);
+      fullPageNumber = number;
+      try { sessionStorage.setItem(key, String(number)); } catch {}
+      if (!selected && location.pathname !== '/' && !validPage(raw)) {
+        const url = new URL(location.href);
+        url.searchParams.set('page', number);
+        history.replaceState(null, '', url.pathname + url.search);
+      }
       const older = pagination.querySelector('a.older');
       const newer = pagination.querySelector('a.newer');
       const cursorUrl = (original, nextNumber) => {
@@ -98,11 +112,12 @@
       const current = new URL(location.href);
       current.searchParams.delete('view');
       if (selected) current.searchParams.delete('page');
+      if (location.pathname !== '/') current.searchParams.set('page', number);
       const pages = [];
       if (number > 1 && previous) pages.push([number - 1, previous]);
-      pages.push([number || '历史', current.pathname + current.search]);
+      pages.push([number, current.pathname + current.search]);
       if (number && next) pages.push([number + 1, next]);
-      const controls = paginationControls(number, number ? '本次浏览页序 · 总页数未知' : '游标分页 · 总页数未知', previous, next, pages, '/');
+      const controls = paginationControls(number, '本次浏览页序 · 总页数未知', previous, next, pages, '/');
       pagination.replaceWith(controls);
       document.querySelector('#main-content').prepend(controls.cloneNode(true));
     }
@@ -145,6 +160,7 @@
   const full = new URL(original);
   full.searchParams.delete('view');
   if (selected) full.searchParams.delete('page');
+  if (full.pathname !== '/') full.searchParams.set('page', fullPageNumber);
   const fullUrl = full.pathname + full.search;
   if (!selected) {
     original.searchParams.set('view', 'selected');
