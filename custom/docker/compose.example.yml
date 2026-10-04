@@ -1,0 +1,16 @@
+services:
+  broadcastchannel:
+    image: ghcr.io/miantiao-me/broadcastchannel@sha256:fa583b2f62fd46c3ea65064711e49dc280bceca641a5847e0d08e1fdac74078e
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4321:4321"
+    volumes:
+      - ./broadcastchannel.css:/app/dist/client/news.css:ro
+      - ./broadcastchannel.js:/app/dist/client/news.js:ro
+      - ../output/broadcast-public:/app/dist/client/news-data:ro
+    environment:
+      CHANNEL: ${CHANNEL:?Set a public Telegram channel username}
+      TELEGRAM: ${CHANNEL}
+      LOCALE: zh-CN
+      TIMEZONE: Asia/Shanghai
+      HEADER_INJECT: '<link rel="stylesheet" href="/themes/polar.css"><link rel="stylesheet" href="/news.css?v=20261004-4"><script src="/news.js?v=20261004-4" defer></script>'

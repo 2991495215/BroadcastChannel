@@ -1,0 +1,7 @@
+.env
+*.env
+*.sqlite3
+__pycache__/
+output/
+node_modules/
+*.png
