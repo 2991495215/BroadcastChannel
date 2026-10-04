@@ -32,10 +32,64 @@ const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright-core');
     assert.equal(new URL(page.url()).pathname, '/');
     await page.getByRole('link', {name: '精选消息', exact: true}).click();
     await page.waitForLoadState('networkidle');
-    assert.equal(await page.locator('.news-pagination').count(), 0);
+    assert.equal(await page.locator('.news-pagination').count(), 2);
+    assert((await page.locator('.page-status').first().innerText()).startsWith('第 1 /'));
+    assert(await page.locator('.post-entry').count() <= 20);
     assert((await page.locator('.feed-note').innerText()).includes('相关度'));
+    assert((await page.locator('.feed-sync').innerText()).includes('数据更新于'));
+    const sample = Array.from({length: 45}, (_, i) => ({
+      title: `测试消息 ${i + 1}`, url: `https://example.com/${i}`, score: 0.8, source: '测试来源', summary: '<script>不能执行</script>',
+    }));
+    let payload = {items: [...sample, null, {url: 'javascript:alert(1)', score: 1}], min_score: 0.65, updated_at: new Date().toISOString()};
+    let failure = false, requests = 0;
+    await page.route('**/news-data/selected.json*', route => {
+      requests++;
+      return route.fulfill({status: failure ? 503 : 200, contentType: 'application/json', body: JSON.stringify(payload)});
+    });
+    await page.goto(base + '/?view=selected', {waitUntil: 'networkidle'});
+    assert((await page.locator('.page-status').first().innerText()).startsWith('第 1 / 3 页'));
+    assert.equal(await page.locator('.post-entry').count(), 20);
+    assert.equal(await page.locator('.selected-summary script').count(), 0);
+    await page.getByRole('link', {name: '第 3 页', exact: true}).first().click();
+    assert.equal(await page.locator('.post-entry').count(), 5);
+    await page.reload({waitUntil: 'networkidle'});
+    assert((await page.locator('.page-status').first().innerText()).startsWith('第 3 / 3 页'));
+    await page.getByRole('link', {name: '上一页', exact: true}).first().click();
+    assert((await page.locator('.page-status').first().innerText()).startsWith('第 2 / 3 页'));
+    await page.goBack();
+    await page.waitForFunction(() => document.querySelector('.page-status').textContent.startsWith('第 3 / 3 页'));
+    failure = true;
+    await page.getByRole('button', {name: '立即同步'}).click();
+    await page.waitForFunction(() => document.querySelector('.feed-sync').textContent.includes('同步失败'));
+    assert.equal(await page.locator('.post-entry').count(), 5);
+    failure = false;
+    payload = {...payload, min_score: 0.9};
+    await page.getByRole('button', {name: '立即同步'}).click();
+    await page.waitForFunction(() => document.querySelector('.feed-count').textContent === '0 条 · 1 页');
+    assert.equal(await page.locator('.feed-empty').count(), 1);
+    assert.equal(new URL(page.url()).searchParams.get('page'), '1');
+    const before = requests;
+    payload = {...payload, min_score: 0.65};
+    await page.waitForFunction(() => document.querySelector('.feed-count').textContent === '45 条 · 3 页', null, {timeout: 35000});
+    assert(requests > before, 'automatic sync must fetch without a manual refresh');
+    for (const width of [320, 390, 1440]) {
+      await page.setViewportSize({width, height: 900});
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    }
+    payload = {...payload, updated_at: '2020-01-01T00:00:00Z'};
+    await page.getByRole('button', {name: '立即同步'}).click();
+    await page.waitForFunction(() => document.querySelector('.feed-sync').textContent.includes('超过 15 分钟'));
+    await page.goto(base + '/?view=selected&page=999999', {waitUntil: 'networkidle'});
+    assert((await page.locator('.page-status').first().innerText()).startsWith('第 3 / 3 页'));
+    failure = true;
+    await page.reload({waitUntil: 'networkidle'});
+    assert.equal(await page.locator('.post-entry').count(), 0);
+    assert((await page.locator('.feed-sync').innerText()).includes('暂时无法加载'));
+    failure = false;
+    await page.getByRole('button', {name: '立即同步'}).click();
+    await page.waitForFunction(() => document.querySelectorAll('.post-entry').length === 5);
     assert.deepEqual(errors, []);
-    console.log('PASS pagination, mobile layout, reload, historical cursor, latest and selected feed');
+    console.log('PASS full/selected pagination, reload, mobile, automatic/manual sync, threshold change, stale/failed fetch, empty feed and unsafe data');
   } finally {
     await browser.close();
   }

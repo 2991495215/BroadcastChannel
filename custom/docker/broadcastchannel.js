@@ -59,51 +59,142 @@
   if (!selected || !document.body.classList.contains('feed')) return;
   document.body.classList.add('selected-feed');
   const main = document.querySelector('#main-content');
-  const note = element('p', 'feed-note', '正在读取 AI 精选消息…');
-  note.setAttribute('role', 'status');
-  main.replaceChildren(note);
+  const toolbar = element('section', 'feed-toolbar');
+  const heading = element('div', 'feed-heading');
+  heading.append(element('h2', '', 'AI 精选'));
+  const count = element('span', 'feed-count', '正在加载');
+  heading.append(count);
+  const refresh = element('button', 'feed-refresh', '立即同步');
+  refresh.type = 'button';
+  const note = element('p', 'feed-note', '正在读取已评分消息…');
+  const sync = element('p', 'feed-sync', '连接中');
+  sync.setAttribute('role', 'status');
+  const hint = element('p', 'feed-hint', '每 30 秒检查更新 · 后台约每 5 分钟抓取评分 · 未达相关度的消息不进入精选');
+  toolbar.append(heading, refresh, note, sync, hint);
+  const content = element('div', 'selected-results');
+  main.replaceChildren(toolbar, content);
+  const pageSize = 20;
+  let items = [], busy = false, loaded = false, signature = '', updatedAt = 0;
+  const currentPage = () => {
+    const raw = new URLSearchParams(location.search).get('page');
+    return /^[1-9]\d{0,5}$/.test(raw || '') ? Number(raw) : 1;
+  };
+  function pageUrl(number) {
+    const url = new URL(location.href);
+    url.searchParams.set('page', number);
+    return url.pathname + url.search;
+  }
+  function render() {
+    const total = Math.max(1, Math.ceil(items.length / pageSize));
+    const number = Math.min(currentPage(), total);
+    if (number !== currentPage()) history.replaceState(null, '', pageUrl(number));
+    const start = (number - 1) * pageSize;
+    count.textContent = `${items.length} 条 · ${total} 页`;
+    const controls = element('nav', 'news-pagination selected-pagination');
+    controls.setAttribute('aria-label', '精选消息分页');
+    const addLink = (label, target, enabled, className = 'page-button') => {
+      const link = element(enabled ? 'a' : 'span', className + (enabled ? '' : ' disabled'), label);
+      if (enabled) link.href = pageUrl(target);
+      else link.setAttribute('aria-disabled', 'true');
+      controls.append(link);
+    };
+    addLink('上一页', number - 1, number > 1);
+    const status = element('span', 'page-status', `第 ${number} / ${total} 页`);
+    status.append(element('small', '', items.length ? `第 ${start + 1}–${Math.min(start + pageSize, items.length)} 条，共 ${items.length} 条` : '暂无符合条件的消息'));
+    controls.append(status);
+    addLink('下一页', number + 1, number < total);
+    const pages = element('div', 'page-numbers');
+    for (let n = 1; n <= total; n++) {
+      const link = element('a', 'page-number', String(n));
+      link.href = pageUrl(n);
+      link.setAttribute('aria-label', `第 ${n} 页`);
+      if (n === number) link.setAttribute('aria-current', 'page');
+      pages.append(link);
+    }
+    controls.append(pages);
+    const feed = element('ul', 'posts-feed');
+    for (const item of items.slice(start, start + pageSize)) {
+      const li = element('li', '');
+      const card = element('article', 'post-entry');
+      const title = element('div', 'hn-story');
+      const h2 = element('h2', '');
+      const link = element('a', '', item.title || '无标题');
+      link.href = item.url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      h2.append(link);
+      title.append(h2);
+      const meta = element('div', 'post-meta');
+      meta.append(element('p', '', item.published || '发布时间未知'));
+      const body = element('div', 'post-content content');
+      body.append(element('div', 'link_preview_site_name', item.source || '来源未知'));
+      body.append(element('p', 'selected-summary', item.summary || '点击标题查看原文'));
+      body.append(element('p', 'selected-badge', `${item.tag || 'AI 精选'} · 相关度 ${Math.round(item.score * 100)}%`));
+      card.append(title, meta, body);
+      li.append(card);
+      feed.append(li);
+    }
+    content.replaceChildren(controls, feed, controls.cloneNode(true));
+    if (!items.length) feed.append(element('li', 'feed-empty', '暂无达到当前相关度的消息。全量消息仍可正常查看，后续评分结果会自动同步。'));
+  }
+  content.addEventListener('click', event => {
+    const link = event.target.closest('.news-pagination a');
+    if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    history.pushState(null, '', link.href);
+    render();
+    content.scrollIntoView({block: 'start'});
+    content.querySelector('.page-status').setAttribute('tabindex', '-1');
+    content.querySelector('.page-status').focus({preventScroll: true});
+  });
+  window.addEventListener('popstate', () => { if (loaded) render(); });
   async function load() {
+    if (busy) return;
+    busy = true;
+    refresh.disabled = true;
+    refresh.textContent = '同步中…';
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
     try {
-      const response = await fetch('/news-data/selected.json', {cache: 'no-store'});
+      const response = await fetch(`/news-data/selected.json?t=${Date.now()}`, {cache: 'no-store', signal: controller.signal});
       if (!response.ok) throw new Error('feed unavailable');
       const data = await response.json();
       if (!Array.isArray(data.items)) throw new Error('invalid feed');
       const threshold = data.min_score;
       if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) throw new Error('invalid threshold');
-      const feed = element('ul', 'posts-feed');
+      const valid = [];
       for (const item of data.items) {
+        if (!item || typeof item !== 'object') continue;
         let url;
         try { url = new URL(item.url); } catch { continue; }
-        if (!['https:', 'http:'].includes(url.protocol) || !Number.isFinite(item.score) || item.score < threshold) continue;
-        const li = element('li', '');
-        const card = element('article', 'post-entry');
-        const heading = element('div', 'hn-story');
-        const h2 = element('h2', '');
-        const link = element('a', '', item.title || '无标题');
-        link.href = url.href;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        h2.append(link);
-        heading.append(h2);
-        const meta = element('div', 'post-meta');
-        meta.append(element('p', '', item.published || '发布时间未知'));
-        const content = element('div', 'post-content content');
-        content.append(element('div', 'link_preview_site_name', item.source));
-        content.append(element('p', 'selected-summary', item.summary || '点击标题查看原文'));
-        const badge = element('p', 'selected-badge', `${item.tag || 'AI 精选'} · 相关度 ${Math.round(item.score * 100)}%`);
-        content.append(badge);
-        card.append(heading, meta, content);
-        li.append(card);
-        feed.append(li);
+        if (!['https:', 'http:'].includes(url.protocol) || !Number.isFinite(item.score) || item.score < threshold || item.score > 1) continue;
+        valid.push({...item, url: url.href});
       }
       const updated = new Date(data.updated_at);
-      const stamp = Number.isNaN(updated.getTime()) ? '' : ` · 更新于 ${updated.toLocaleString('zh-CN', {timeZone: 'Asia/Shanghai', hour12: false})}`;
-      note.textContent = `AI 精选 · 相关度 ≥ ${Number((threshold * 100).toFixed(2))}% · 最近 ${feed.children.length} 条（最多 200 条）${stamp}`;
-      main.append(feed);
-      if (!feed.children.length) main.append(element('p', 'feed-empty', '暂无符合筛选条件的消息，评分完成后自动更新。'));
+      if (!Number.isFinite(updated.getTime())) throw new Error('invalid update time');
+      updatedAt = updated.getTime();
+      const nextSignature = JSON.stringify([threshold, valid]);
+      items = valid;
+      if (!loaded || signature !== nextSignature) render();
+      signature = nextSignature;
+      loaded = true;
+      note.textContent = `相关度 ≥ ${Number((threshold * 100).toFixed(2))}% · 每页 ${pageSize} 条 · 展示最近最多 200 条`;
+      const stale = Date.now() - updatedAt > 15 * 60 * 1000;
+      sync.classList.toggle('sync-warning', stale);
+      sync.textContent = `${stale ? '数据超过 15 分钟未更新，请检查后台' : '已同步'} · 数据更新于 ${updated.toLocaleString('zh-CN', {timeZone: 'Asia/Shanghai', hour12: false})}`;
     } catch {
-      note.textContent = '精选消息暂时无法加载，请稍后刷新；仍可切换查看全量消息。';
+      sync.classList.add('sync-warning');
+      sync.textContent = loaded ? '同步失败，保留上次消息；30 秒后重试，也可点击立即同步。' : '精选暂时无法加载；30 秒后重试，也可点击立即同步。';
+      if (!loaded) note.textContent = '仍可切换查看全量消息。';
+    } finally {
+      clearTimeout(timeout);
+      busy = false;
+      refresh.disabled = false;
+      refresh.textContent = '立即同步';
     }
   }
+  refresh.addEventListener('click', load);
+  setInterval(() => { if (!document.hidden) load(); }, 30000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
   load();
 })();
