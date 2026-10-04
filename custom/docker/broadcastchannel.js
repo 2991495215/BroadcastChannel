@@ -9,6 +9,52 @@
     if (text !== undefined) node.textContent = text;
     return node;
   };
+  const formatTime = value => {
+    if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value || '')) return value;
+    const date = new Date(value);
+    return Number.isFinite(date.getTime()) ? date.toLocaleString('sv-SE', {timeZone: 'Asia/Shanghai', hour12: false}) : '发布时间未知';
+  };
+  function messageCard(item) {
+    const card = element('article', 'post-entry');
+    const title = element('div', 'hn-story');
+    const h2 = element('h2', '');
+    const link = element('a', '', item.title || '无标题');
+    link.href = item.url;
+    if (item.external) { link.target = '_blank'; link.rel = 'noopener noreferrer'; }
+    h2.append(link);
+    title.append(h2);
+    const meta = element('div', 'post-meta');
+    meta.append(element('p', '', formatTime(item.published)));
+    const body = element('div', 'post-content content');
+    body.append(element('div', 'link_preview_site_name', item.source || '来源未知'));
+    body.append(element('p', 'selected-summary', item.summary || '暂无摘要，点击标题查看原文'));
+    body.append(element('p', 'selected-badge', item.badge));
+    card.append(title, meta, body);
+    return card;
+  }
+  function paginationControls(number, description, previous, next, pages, latest) {
+    const controls = element('nav', 'news-pagination');
+    controls.setAttribute('aria-label', '消息分页');
+    const addLink = (label, href, className = 'page-button') => {
+      const link = element(href ? 'a' : 'span', className + (href ? '' : ' disabled'), label);
+      if (href) link.href = href;
+      else link.setAttribute('aria-disabled', 'true');
+      return link;
+    };
+    const status = element('span', 'page-status', number ? `第 ${number} 页` : '历史消息');
+    status.append(element('small', '', description));
+    controls.append(addLink('上一页', previous), status, addLink('下一页', next));
+    const numbers = element('div', 'page-numbers');
+    for (const [n, href] of pages) {
+      const link = addLink(String(n), href, 'page-number');
+      link.setAttribute('aria-label', typeof n === 'number' ? `第 ${n} 页` : '历史消息');
+      if (n === number || n === '历史') link.setAttribute('aria-current', 'page');
+      numbers.append(link);
+    }
+    numbers.append(addLink('回到最新', latest, 'page-latest'));
+    controls.append(numbers);
+    return controls;
+  }
   navigation.replaceChildren();
   if (isFeed) {
     navigation.setAttribute('role', 'tablist');
@@ -41,31 +87,22 @@
       const number = location.pathname === '/' ? 1 : (/^[1-9]\d{0,5}$/.test(raw || '') ? Number(raw) : null);
       const older = pagination.querySelector('a.older');
       const newer = pagination.querySelector('a.newer');
-      const controls = element('nav', 'news-pagination');
-      controls.setAttribute('aria-label', '消息分页');
-      const addLink = (label, original, nextNumber) => {
-        if (!original) {
-          const disabled = element('span', 'page-button disabled', label);
-          disabled.setAttribute('aria-disabled', 'true');
-          controls.append(disabled);
-          return;
-        }
-        const link = element('a', 'page-button', label);
+      const cursorUrl = (original, nextNumber) => {
+        if (!original) return null;
         const url = new URL(original.href);
         if (nextNumber) url.searchParams.set('page', nextNumber);
-        link.href = url.pathname + url.search;
-        controls.append(link);
+        return url.pathname + url.search;
       };
-      addLink('上一页 · 更新', newer, number && Math.max(1, number - 1));
-      const status = element('span', 'page-status', number ? `第 ${number} 页` : '历史消息');
-      status.append(element('small', '', number ? '本次浏览页序' : '游标分页 · 返回最新后从第 1 页浏览'));
-      controls.append(status);
-      addLink('下一页 · 更早', older, number && number + 1);
-      const latest = element('a', 'page-latest', '回到最新');
-      latest.href = '/';
-      const extras = element('div', 'page-extras');
-      extras.append(latest);
-      controls.append(extras);
+      const previous = cursorUrl(newer, number && Math.max(1, number - 1));
+      const next = cursorUrl(older, number && number + 1);
+      const current = new URL(location.href);
+      current.searchParams.delete('view');
+      if (selected) current.searchParams.delete('page');
+      const pages = [];
+      if (number > 1 && previous) pages.push([number - 1, previous]);
+      pages.push([number || '历史', current.pathname + current.search]);
+      if (number && next) pages.push([number + 1, next]);
+      const controls = paginationControls(number, number ? '本次浏览页序 · 总页数未知' : '游标分页 · 总页数未知', previous, next, pages, '/');
       pagination.replaceWith(controls);
       document.querySelector('#main-content').prepend(controls.cloneNode(true));
     }
@@ -79,12 +116,21 @@
   const fullPanel = element('section', 'feed-panel');
   fullPanel.id = 'panel-full';
   fullPanel.append(...main.childNodes);
+  for (const card of fullPanel.querySelectorAll('.post-entry')) {
+    const body = card.querySelector('.post-content');
+    const text = body?.innerText || '';
+    const title = card.querySelector('.hn-story a');
+    const source = body?.querySelector('.link_preview_site_name')?.textContent || text.match(/分组:\s*(.*?)(?=\s*(?:时间:|🕒)|\n|$)/)?.[1];
+    const summary = body?.querySelector('.link_preview_description')?.textContent || text.split('\n').filter(line => !/链接:|分组:|时间:/.test(line) && line.trim() !== title?.textContent.trim()).join('\n').trim();
+    if (!title) continue;
+    card.replaceWith(messageCard({title: title.textContent, url: title.href, source, summary, published: text.match(/时间:\s*(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})/)?.[1] || card.querySelector('time')?.dateTime, badge: '频道消息 · 未按相关度筛选'}));
+  }
   const selectedPanel = element('section', 'feed-panel');
   selectedPanel.id = 'panel-selected';
   const fullToolbar = element('section', 'feed-toolbar full-toolbar');
   const fullHeading = element('div', 'feed-heading');
   fullHeading.append(element('h2', '', '全量消息'), element('span', 'full-count', `本页 ${fullPanel.querySelectorAll('.post-entry').length} 条`));
-  const fullRefresh = element('button', 'feed-refresh', '刷新消息');
+  const fullRefresh = element('button', 'feed-refresh', '立即同步');
   fullRefresh.type = 'button';
   fullRefresh.addEventListener('click', () => location.reload());
   const fullDetails = element('details', 'feed-details');
@@ -107,7 +153,7 @@
   let selectedUrl = original.pathname + original.search;
   const toolbar = element('section', 'feed-toolbar');
   const heading = element('div', 'feed-heading');
-  heading.append(element('h2', '', 'AI 精选'));
+  heading.append(element('h2', '', '精选消息'));
   const count = element('span', 'feed-count', '正在加载');
   heading.append(count);
   const refresh = element('button', 'feed-refresh', '立即同步');
@@ -142,48 +188,14 @@
     }
     const start = (number - 1) * pageSize;
     count.textContent = `${items.length} 条 · ${total} 页`;
-    const controls = element('nav', 'news-pagination selected-pagination');
-    controls.setAttribute('aria-label', '精选消息分页');
-    const addLink = (label, target, enabled, className = 'page-button') => {
-      const link = element(enabled ? 'a' : 'span', className + (enabled ? '' : ' disabled'), label);
-      if (enabled) link.href = pageUrl(target);
-      else link.setAttribute('aria-disabled', 'true');
-      controls.append(link);
-    };
-    addLink('上一页', number - 1, number > 1);
-    const status = element('span', 'page-status', `第 ${number} / ${total} 页`);
-    status.append(element('small', '', items.length ? `第 ${start + 1}–${Math.min(start + pageSize, items.length)} 条，共 ${items.length} 条` : '暂无符合条件的消息'));
-    controls.append(status);
-    addLink('下一页', number + 1, number < total);
-    const pages = element('div', 'page-numbers');
-    for (let n = 1; n <= total; n++) {
-      const link = element('a', 'page-number', String(n));
-      link.href = pageUrl(n);
-      link.setAttribute('aria-label', `第 ${n} 页`);
-      if (n === number) link.setAttribute('aria-current', 'page');
-      pages.append(link);
-    }
-    controls.append(pages);
+    const description = items.length ? `共 ${total} 页 · 第 ${start + 1}–${Math.min(start + pageSize, items.length)} 条 / ${items.length} 条` : '暂无符合条件的消息';
+    const pages = Array.from({length: total}, (_, index) => [index + 1, pageUrl(index + 1)]);
+    const controls = paginationControls(number, description, number > 1 ? pageUrl(number - 1) : null, number < total ? pageUrl(number + 1) : null, pages, pageUrl(1));
+    controls.classList.add('selected-pagination');
     const feed = element('ul', 'posts-feed');
     for (const item of items.slice(start, start + pageSize)) {
       const li = element('li', '');
-      const card = element('article', 'post-entry');
-      const title = element('div', 'hn-story');
-      const h2 = element('h2', '');
-      const link = element('a', '', item.title || '无标题');
-      link.href = item.url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      h2.append(link);
-      title.append(h2);
-      const meta = element('div', 'post-meta');
-      meta.append(element('p', '', item.published || '发布时间未知'));
-      const body = element('div', 'post-content content');
-      body.append(element('div', 'link_preview_site_name', item.source || '来源未知'));
-      body.append(element('p', 'selected-summary', item.summary || '点击标题查看原文'));
-      body.append(element('p', 'selected-badge', `${item.tag || 'AI 精选'} · 相关度 ${Math.round(item.score * 100)}%`));
-      card.append(title, meta, body);
-      li.append(card);
+      li.append(messageCard({...item, external: true, badge: `${item.tag || 'AI 精选'} · 相关度 ${Math.round(item.score * 100)}%`}));
       feed.append(li);
     }
     content.replaceChildren(controls, feed, controls.cloneNode(true));
