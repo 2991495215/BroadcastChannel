@@ -1,7 +1,8 @@
 (() => {
   const navigation = document.querySelector('.site-navigation ul');
   if (!navigation) return;
-  const selected = new URLSearchParams(location.search).get('view') === 'selected';
+  let selected = new URLSearchParams(location.search).get('view') === 'selected';
+  const isFeed = document.body.classList.contains('feed');
   const element = (tag, className, text) => {
     const node = document.createElement(tag);
     node.className = className;
@@ -9,23 +10,34 @@
     return node;
   };
   navigation.replaceChildren();
-  for (const [label, href, active] of [
-    ['全量消息', '/', !selected],
-    ['精选消息', '/?view=selected', selected],
+  if (isFeed) {
+    navigation.setAttribute('role', 'tablist');
+    navigation.setAttribute('aria-label', '消息类型');
+  }
+  const tabs = [];
+  for (const [label, href, id] of [
+    ['全量消息', '/', 'full'],
+    ['精选消息', '/?view=selected', 'selected'],
   ]) {
     const li = element('li', '');
-    const link = element('a', 'feed-tab', label);
-    link.href = href;
-    if (active) link.setAttribute('aria-current', 'page');
+    const link = element(isFeed ? 'button' : 'a', 'feed-tab', label);
+    if (isFeed) {
+      li.setAttribute('role', 'presentation');
+      link.type = 'button';
+      link.id = `tab-${id}`;
+      link.setAttribute('role', 'tab');
+      link.setAttribute('aria-controls', `panel-${id}`);
+      tabs.push(link);
+    } else link.href = href;
     li.append(link);
     navigation.append(li);
   }
-  if (!selected && document.body.classList.contains('feed')) {
+  if (isFeed) {
     const pagination = document.querySelector('.pagination');
     if (pagination) {
       // ponytail: Telegram uses cursors, not stable numbered pages; count this browsing sequence only.
       const params = new URLSearchParams(location.search);
-      const raw = params.get('page');
+      const raw = selected ? null : params.get('page');
       const number = location.pathname === '/' ? 1 : (/^[1-9]\d{0,5}$/.test(raw || '') ? Number(raw) : null);
       const older = pagination.querySelector('a.older');
       const newer = pagination.querySelector('a.newer');
@@ -56,9 +68,27 @@
       document.querySelector('#main-content').prepend(controls.cloneNode(true));
     }
   }
-  if (!selected || !document.body.classList.contains('feed')) return;
-  document.body.classList.add('selected-feed');
+  if (!isFeed) return;
   const main = document.querySelector('#main-content');
+  const fullPanel = element('section', 'feed-panel');
+  fullPanel.id = 'panel-full';
+  fullPanel.append(...main.childNodes);
+  const selectedPanel = element('section', 'feed-panel');
+  selectedPanel.id = 'panel-selected';
+  for (const [panel, id] of [[fullPanel, 'full'], [selectedPanel, 'selected']]) {
+    panel.setAttribute('role', 'tabpanel');
+    panel.setAttribute('aria-labelledby', `tab-${id}`);
+  }
+  const original = new URL(location.href);
+  const full = new URL(original);
+  full.searchParams.delete('view');
+  if (selected) full.searchParams.delete('page');
+  const fullUrl = full.pathname + full.search;
+  if (!selected) {
+    original.searchParams.set('view', 'selected');
+    original.searchParams.delete('page');
+  }
+  let selectedUrl = original.pathname + original.search;
   const toolbar = element('section', 'feed-toolbar');
   const heading = element('div', 'feed-heading');
   heading.append(element('h2', '', 'AI 精选'));
@@ -72,22 +102,26 @@
   const hint = element('p', 'feed-hint', '每 30 秒检查更新 · 后台约每 5 分钟抓取评分 · 未达相关度的消息不进入精选');
   toolbar.append(heading, refresh, note, sync, hint);
   const content = element('div', 'selected-results');
-  main.replaceChildren(toolbar, content);
+  selectedPanel.append(toolbar, content);
+  main.replaceChildren(fullPanel, selectedPanel);
   const pageSize = 20;
   let items = [], busy = false, loaded = false, signature = '', updatedAt = 0;
   const currentPage = () => {
-    const raw = new URLSearchParams(location.search).get('page');
+    const raw = new URL(selectedUrl, location.origin).searchParams.get('page');
     return /^[1-9]\d{0,5}$/.test(raw || '') ? Number(raw) : 1;
   };
   function pageUrl(number) {
-    const url = new URL(location.href);
+    const url = new URL(selectedUrl, location.origin);
     url.searchParams.set('page', number);
     return url.pathname + url.search;
   }
   function render() {
     const total = Math.max(1, Math.ceil(items.length / pageSize));
     const number = Math.min(currentPage(), total);
-    if (number !== currentPage()) history.replaceState(null, '', pageUrl(number));
+    if (number !== currentPage()) {
+      selectedUrl = pageUrl(number);
+      if (selected) history.replaceState(null, '', selectedUrl);
+    }
     const start = (number - 1) * pageSize;
     count.textContent = `${items.length} 条 · ${total} 页`;
     const controls = element('nav', 'news-pagination selected-pagination');
@@ -141,13 +175,44 @@
     const link = event.target.closest('.news-pagination a');
     if (!link || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
-    history.pushState(null, '', link.href);
+    selectedUrl = link.pathname + link.search;
+    history.pushState(null, '', selectedUrl);
     render();
     content.scrollIntoView({block: 'start'});
     content.querySelector('.page-status').setAttribute('tabindex', '-1');
     content.querySelector('.page-status').focus({preventScroll: true});
   });
-  window.addEventListener('popstate', () => { if (loaded) render(); });
+  function switchView(nextSelected, push = true) {
+    selected = nextSelected;
+    fullPanel.hidden = selected;
+    selectedPanel.hidden = !selected;
+    document.body.classList.toggle('selected-feed', selected);
+    tabs.forEach((tab, index) => {
+      const active = (index === 1) === selected;
+      tab.setAttribute('aria-selected', String(active));
+      tab.tabIndex = active ? 0 : -1;
+    });
+    if (push) history.pushState(null, '', selected ? selectedUrl : fullUrl);
+    if (selected) {
+      if (loaded) render();
+      load();
+    }
+  }
+  tabs.forEach((tab, index) => tab.addEventListener('click', () => {
+    if (selected !== (index === 1)) switchView(index === 1);
+  }));
+  navigation.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const index = event.key === 'Home' ? 0 : event.key === 'End' ? 1 : selected ? 0 : 1;
+    tabs[index].focus();
+    if (selected !== (index === 1)) switchView(index === 1);
+  });
+  window.addEventListener('popstate', () => {
+    const nextSelected = new URLSearchParams(location.search).get('view') === 'selected';
+    if (nextSelected) selectedUrl = location.pathname + location.search;
+    switchView(nextSelected, false);
+  });
   async function load() {
     if (busy) return;
     busy = true;
@@ -194,7 +259,7 @@
     }
   }
   refresh.addEventListener('click', load);
-  setInterval(() => { if (!document.hidden) load(); }, 30000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) load(); });
-  load();
+  setInterval(() => { if (selected && !document.hidden) load(); }, 30000);
+  document.addEventListener('visibilitychange', () => { if (selected && !document.hidden) load(); });
+  switchView(selected, false);
 })();
