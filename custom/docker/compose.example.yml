@@ -13,4 +13,4 @@ services:
       TELEGRAM: ${CHANNEL}
       LOCALE: zh-CN
       TIMEZONE: Asia/Shanghai
-      HEADER_INJECT: '<link rel="stylesheet" href="/themes/polar.css"><link rel="stylesheet" href="/news.css?v=20261004-6"><script src="/news.js?v=20261004-6" defer></script>'
+      HEADER_INJECT: '<link rel="stylesheet" href="/themes/polar.css"><link rel="stylesheet" href="/news.css?v=20261005-1"><script src="/news.js?v=20261005-1" defer></script>'

@@ -14,6 +14,28 @@ const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright-core');
     assert.equal(await page.locator('.news-pagination:visible').count(), 2);
     assert((await page.locator('.page-status:visible').first().innerText()).startsWith('第 1 页'));
     assert.equal(await page.locator('.news-pagination .disabled').count(), 2);
+    assert.equal(await page.locator('.feed-panel.is-entering').count(), 0, 'initial load must not animate');
+    await page.emulateMedia({reducedMotion: 'no-preference'});
+    const transition = await page.evaluate(() => {
+      document.querySelector('#tab-selected').click();
+      const animation = document.querySelector('#panel-selected').getAnimations()[0];
+      return {name: animation?.animationName, duration: animation?.effect.getTiming().duration};
+    });
+    assert.deepEqual(transition, {name: 'feed-enter', duration: 220});
+    await page.evaluate(() => Promise.all(document.querySelector('#panel-selected').getAnimations().map(animation => animation.finished)));
+    assert.equal(await page.locator('#panel-selected').evaluate(panel => getComputedStyle(panel).opacity), '1');
+    await page.evaluate(() => {
+      for (let i = 0; i < 20; i++) document.querySelector(i % 2 ? '#tab-selected' : '#tab-full').click();
+      document.querySelector('#tab-full').click();
+    });
+    assert.equal(await page.locator('#panel-selected').isVisible(), false);
+    assert.equal(await page.locator('#panel-full').isVisible(), true);
+    await page.emulateMedia({reducedMotion: 'reduce'});
+    await page.evaluate(() => document.querySelector('#tab-selected').click());
+    assert.equal(await page.locator('#panel-selected').evaluate(panel => panel.getAnimations().length), 0);
+    assert(await page.locator('#tab-selected').evaluate(tab => parseFloat(getComputedStyle(tab).transitionDuration) <= 0.00001));
+    await page.evaluate(() => document.querySelector('#tab-full').click());
+    await page.emulateMedia({reducedMotion: 'no-preference'});
     await page.getByRole('link', {name: '下一页 · 更早', exact: true}).first().click();
     await page.waitForLoadState('networkidle');
     assert((await page.locator('.page-status:visible').first().innerText()).startsWith('第 2 页'));
@@ -114,7 +136,7 @@ const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright-core');
     await page.getByRole('button', {name: '立即同步'}).click();
     await page.waitForFunction(() => document.querySelectorAll('.selected-results .post-entry').length === 5);
     assert.deepEqual(errors, []);
-    console.log('PASS same-document tabs, independent page state, keyboard/back navigation, pagination, mobile, automatic/manual sync and failure recovery');
+    console.log('PASS 220ms transition, rapid switching, reduced motion, same-document tabs, independent page state, keyboard/back navigation, pagination, mobile, automatic/manual sync and failure recovery');
   } finally {
     await browser.close();
   }

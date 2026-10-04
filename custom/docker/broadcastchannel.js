@@ -183,9 +183,12 @@
     content.querySelector('.page-status').focus({preventScroll: true});
   });
   function switchView(nextSelected, push = true) {
+    const changed = selected !== nextSelected;
     selected = nextSelected;
     fullPanel.hidden = selected;
     selectedPanel.hidden = !selected;
+    fullPanel.classList.toggle('is-entering', changed && !selected);
+    selectedPanel.classList.toggle('is-entering', changed && selected);
     document.body.classList.toggle('selected-feed', selected);
     tabs.forEach((tab, index) => {
       const active = (index === 1) === selected;
