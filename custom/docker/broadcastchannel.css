@@ -30,7 +30,6 @@ body { max-width: var(--width); padding: 0 24px 32px; }
 .feed-note { margin: 0 0 18px; color: var(--muted-color); font-size: 12px; line-height: 1.7; }
 .selected-summary { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; margin: 0; }
 .selected-badge { margin: 12px 0 0; color: var(--accent-color); font-size: 12px; }
-.selected-feed .desktop-search, .selected-feed .mobile-search { visibility: hidden; pointer-events: none; }
 .feed-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px 16px; padding: 20px; margin-bottom: 18px; border: 1px solid var(--border-color); border-radius: 14px; background: #fff; }
 .feed-heading { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .feed-heading h2 { margin: 0; font-size: 20px; }

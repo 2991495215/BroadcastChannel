@@ -71,6 +71,10 @@
     }
   }
   if (!isFeed) return;
+  for (const input of document.querySelectorAll('.desktop-search input, .mobile-search input')) {
+    input.placeholder = '搜索频道消息…';
+    input.setAttribute('aria-label', '搜索公开频道的全量消息');
+  }
   const main = document.querySelector('#main-content');
   const fullPanel = element('section', 'feed-panel');
   fullPanel.id = 'panel-full';
