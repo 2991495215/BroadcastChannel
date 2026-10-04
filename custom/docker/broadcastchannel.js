@@ -63,7 +63,9 @@
       addLink('下一页 · 更早', older, number && number + 1);
       const latest = element('a', 'page-latest', '回到最新');
       latest.href = '/';
-      controls.append(latest);
+      const extras = element('div', 'page-extras');
+      extras.append(latest);
+      controls.append(extras);
       pagination.replaceWith(controls);
       document.querySelector('#main-content').prepend(controls.cloneNode(true));
     }
@@ -75,6 +77,16 @@
   fullPanel.append(...main.childNodes);
   const selectedPanel = element('section', 'feed-panel');
   selectedPanel.id = 'panel-selected';
+  const fullToolbar = element('section', 'feed-toolbar full-toolbar');
+  const fullHeading = element('div', 'feed-heading');
+  fullHeading.append(element('h2', '', '全量消息'), element('span', 'full-count', `本页 ${fullPanel.querySelectorAll('.post-entry').length} 条`));
+  const fullRefresh = element('button', 'feed-refresh', '刷新消息');
+  fullRefresh.type = 'button';
+  fullRefresh.addEventListener('click', () => location.reload());
+  const fullDetails = element('details', 'feed-details');
+  fullDetails.append(element('summary', '', '更新说明'), element('p', 'feed-hint', '来自公开频道的全部推送 · 翻页查看更早消息 · 频道使用游标分页，没有固定总页数'));
+  fullToolbar.append(fullHeading, fullRefresh, element('p', 'full-note', '公开频道 · 不按相关度筛选'), element('p', 'full-sync', '按频道发布顺序展示 · 刷新获取最新消息'), fullDetails);
+  fullPanel.prepend(fullToolbar);
   for (const [panel, id] of [[fullPanel, 'full'], [selectedPanel, 'selected']]) {
     panel.setAttribute('role', 'tabpanel');
     panel.setAttribute('aria-labelledby', `tab-${id}`);
@@ -100,7 +112,9 @@
   const sync = element('p', 'feed-sync', '连接中');
   sync.setAttribute('role', 'status');
   const hint = element('p', 'feed-hint', '每 30 秒检查更新 · 后台约每 5 分钟抓取评分 · 未达相关度的消息不进入精选');
-  toolbar.append(heading, refresh, note, sync, hint);
+  const details = element('details', 'feed-details');
+  details.append(element('summary', '', '更新说明'), hint);
+  toolbar.append(heading, refresh, note, sync, details);
   const content = element('div', 'selected-results');
   selectedPanel.append(toolbar, content);
   main.replaceChildren(fullPanel, selectedPanel);

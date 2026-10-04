@@ -49,6 +49,27 @@ const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright-core');
     const firstFullTitle = await page.locator('#panel-full .hn-story').first().innerText();
     await page.getByRole('tab', {name: '精选消息', exact: true}).click();
     await page.locator('.selected-results .page-status:visible').first().waitFor();
+    await page.emulateMedia({reducedMotion: 'reduce'});
+    for (const width of [320, 390, 1440]) {
+      await page.setViewportSize({width, height: 960});
+      const layout = () => page.evaluate(async () => {
+        await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        const panel = document.querySelector('.feed-panel:not([hidden])');
+        const rect = selector => { const r = panel.querySelector(selector).getBoundingClientRect(); return {x: r.x, y: r.y, width: r.width, height: r.height}; };
+        return {toolbar: rect('.feed-toolbar'), pager: rect('.news-pagination'), card: rect('.post-entry'), paginationDisplay: getComputedStyle(panel.querySelector('.news-pagination')).display};
+      });
+      const selectedLayout = await layout();
+      await page.getByRole('tab', {name: '全量消息', exact: true}).click();
+      const fullLayout = await layout();
+      for (const part of ['toolbar', 'pager', 'card']) {
+        for (const key of ['x', 'y', 'width']) assert(Math.abs(fullLayout[part][key] - selectedLayout[part][key]) < 2, `${width}px ${part}.${key} must match: ${JSON.stringify({fullLayout, selectedLayout})}`);
+      }
+      assert.equal(fullLayout.paginationDisplay, selectedLayout.paginationDisplay);
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+      await page.getByRole('tab', {name: '精选消息', exact: true}).click();
+    }
+    await page.setViewportSize({width: 1440, height: 960});
+    await page.emulateMedia({reducedMotion: 'no-preference'});
     assert.equal(new URL(page.url()).pathname, new URL(fullUrl).pathname);
     await page.getByRole('tab', {name: '全量消息', exact: true}).click();
     assert.equal(page.url(), fullUrl);
