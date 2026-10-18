@@ -21,7 +21,7 @@ var $$Index = createComponent(async ($$result, $$props, $$slots) => {
     try {
         // shortcut: compiled chunk names belong to the pinned image; recheck on image upgrades.
         let html = readFileSync("/app/dist/client/qianyan/index.html", "utf8")
-            .replace(/(src|href)="\/(theme\.js|previous\.css|broadcastchannel\.js)"/g, '$1="/qianyan/$2?v=20261018-2"');
+            .replace(/(src|href)="\/(theme\.js|previous\.css|broadcastchannel\.js)"/g, '$1="/qianyan/$2?v=20261018-3"');
         const fallback = channel.posts.map(post => '<article class="post-entry"><div class="hn-story"><h2><a href="/posts/' + encodeURIComponent(post.id) + '">' + escape(post.title) + '</a></h2></div><div class="post-meta"><time datetime="' + escape(post.datetime) + '">' + escape(post.datetime) + '</time></div><div class="post-content content">' + post.content + '</div></article>').join('');
         if (fallback) html = html.replace('<p class="feed-empty">正在读取前沿消息…</p>', fallback);
         return renderTemplate`${unescapeHTML(html)}`;
