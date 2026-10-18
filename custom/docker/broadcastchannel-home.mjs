@@ -1,5 +1,5 @@
 import { r as __exportAll } from "./rolldown-runtime_CE-6LUnI.mjs";
-import { d as renderTemplate, i as renderComponent } from "./server_BU6LzewH.mjs";
+import { b as unescapeHTML, d as renderTemplate, i as renderComponent } from "./server_BU6LzewH.mjs";
 import { t as createComponent } from "./compiler_Corechrc.mjs";
 import { t as $$PostsPage } from "./PostsPage_D8gt0Xxj.mjs";
 import { readFileSync } from "node:fs";
@@ -18,6 +18,16 @@ var $$Index = createComponent(async ($$result, $$props, $$slots) => {
         id: item.id, title: item.title, datetime: /^\d{4}-\d{2}-\d{2} /.test(item.published) ? item.published.replace(" ", "T") + "+08:00" : item.published || "1970-01-01T00:00:00Z",
         content: '<div class="link_preview_site_name">' + escape(item.source) + '</div><div class="link_preview_description">' + escape(item.summary) + '</div>', tags: [],
     }))};
+    try {
+        // shortcut: compiled chunk names belong to the pinned image; recheck on image upgrades.
+        let html = readFileSync("/app/dist/client/qianyan/index.html", "utf8")
+            .replace(/(src|href)="\/(theme\.js|previous\.css|broadcastchannel\.js)"/g, '$1="/qianyan/$2?v=20261018-2"');
+        const fallback = channel.posts.map(post => '<article class="post-entry"><div class="hn-story"><h2><a href="/posts/' + encodeURIComponent(post.id) + '">' + escape(post.title) + '</a></h2></div><div class="post-meta"><time datetime="' + escape(post.datetime) + '">' + escape(post.datetime) + '</time></div><div class="post-content content">' + post.content + '</div></article>').join('');
+        if (fallback) html = html.replace('<p class="feed-empty">正在读取前沿消息…</p>', fallback);
+        return renderTemplate`${unescapeHTML(html)}`;
+    } catch (error) {
+        console.error("Homepage template unavailable; serving channel history", error.message);
+    }
 	return renderTemplate`${renderComponent($$result, "PostsPage", $$PostsPage, {
 		"channel": channel,
 		"after": false,

@@ -9,6 +9,7 @@ services:
       - ./broadcastchannel-logo.jpg:/app/dist/client/news-logo.jpg:ro
       - ./broadcastchannel.js:/app/dist/client/news.js:ro
       - ./broadcastchannel-home.mjs:/app/dist/server/chunks/index_BRGBbngx.mjs:ro
+      - ./qianyan-web:/app/dist/client/qianyan:ro
       - ../output/broadcast-public:/app/dist/client/news-data:ro
     environment:
       CHANNEL: ${CHANNEL:?Set a public Telegram channel username}

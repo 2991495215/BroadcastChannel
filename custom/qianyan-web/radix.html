@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#30764b">
+  <title>前沿消息 · 消息流</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%2330764b'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='sans-serif' font-size='36' fill='%23ffffff'%3E%E5%89%8D%3C/text%3E%3C/svg%3E">
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <script src="broadcastchannel.js" defer></script>
+</head>
+<body class="feed">
+  <a class="skip" href="#main-content">跳到消息</a>
+  <div class="preview-note" role="note">设计预览 · 本地快照 · 未部署</div>
+  <header class="site-header" data-od-id="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="前沿消息首页" data-od-id="brand-home">
+        <span class="brand-mark" aria-hidden="true">前</span>
+        <span class="brand-text">前沿消息<small>公开消息聚合阅读</small></span>
+      </a>
+      <nav class="page-nav" aria-label="站点导航" data-od-id="site-nav">
+        <a href="index.html" aria-current="page">消息流</a>
+        <a href="subscribe.html">订阅</a>
+        <a href="about.html">关于</a>
+      </nav>
+      <div class="channel-links">
+        <button class="theme-toggle" type="button" aria-label="切换主题，当前：跟随系统" title="跟随系统；点击切换到白天" data-od-id="theme-toggle">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <g class="theme-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></g>
+            <path class="theme-system" d="M12 8a4 4 0 0 1 0 8Z" fill="currentColor" stroke="none"/>
+            <path class="theme-moon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div class="workspace">
+    <div class="reading-column">
+      <section class="page-intro" data-od-id="feed-intro">
+        <p class="eyebrow">公开消息 · 按时间阅读</p>
+        <div class="intro-row">
+          <div class="intro-copy">
+            <h1>消息流</h1>
+            <p>按快照收录顺序阅读全部公开消息；切换到精选，只查看达到相关度阈值的条目。</p>
+          </div>
+          <span class="snapshot-pill"><i aria-hidden="true"></i>本地快照</span>
+        </div>
+      </section>
+      <div class="feed-controls" data-od-id="feed-controls">
+        <nav class="site-navigation" aria-label="消息类型"><ul></ul></nav>
+        <form class="desktop-search" role="search" data-od-id="feed-search">
+          <label class="search-label" for="search">搜索消息</label>
+          <span class="search-icon" aria-hidden="true">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+          </span>
+          <input id="search" type="search" name="q" placeholder="搜索标题、来源或正文" autocomplete="off">
+          <button type="submit" data-od-id="search-submit">搜索</button>
+        </form>
+      </div>
+      <main id="main-content" tabindex="-1" data-od-id="feed-main">
+        <p class="feed-empty">正在读取本地消息快照…</p>
+      </main>
+    </div>
+    <aside class="sidebar" aria-label="阅读说明与订阅" data-od-id="sidebar">
+      <section class="side-card intro-card" data-od-id="sidebar-reading">
+        <p class="eyebrow">阅读说明</p>
+        <h2>全量与精选</h2>
+        <p>全量按快照收录顺序排列；精选只保留达到相关度阈值的条目。切换视图不改变消息来源。</p>
+        <dl class="reading-key">
+          <div><dt>全量</dt><dd>按收录顺序排列的全部公开消息。</dd></div>
+          <div><dt>精选</dt><dd>达到相关度阈值的条目。</dd></div>
+        </dl>
+        <a class="side-link" href="about.html">阅读说明与来源边界 <span aria-hidden="true">→</span></a>
+      </section>
+      <section class="side-card subscriptions" data-od-id="sidebar-subscribe">
+        <p class="eyebrow">订阅</p>
+        <h2>RSS 与 Telegram</h2>
+        <p>RSS 适合阅读器，Telegram 适合即时接收。</p>
+        <a class="side-link" href="subscribe.html">RSS 与 Telegram 订阅方式 <span aria-hidden="true">→</span></a>
+      </section>
+      <div class="side-note" data-od-id="sidebar-preview">
+        <p><strong>设计预览</strong> · 数据为本地公开快照，未部署。页面中的“同步”只重新读取这份快照。</p>
+        <p class="side-foot">界面沿用现有结构 · GPL-3.0</p>
+      </div>
+    </aside>
+  </div>
+  <footer class="site-footer" data-od-id="site-footer">
+    <div class="footer-inner">
+      <p class="footer-brand">前沿消息 <span>中文公开消息聚合阅读</span></p>
+      <nav class="footer-nav" aria-label="页脚导航">
+        <a href="index.html">消息流</a>
+        <a href="subscribe.html">订阅</a>
+        <a href="about.html">关于</a>
+        <a href="https://ll.zinc.run/" target="_blank" rel="noopener noreferrer">现有站点 ↗</a>
+        <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer">GPL-3.0 ↗</a>
+      </nav>
+      <p class="footer-note">设计预览 · 数据为快照 · 未部署</p>
+    </div>
+  </footer>
+  <script>
+    (() => {
+      const main = document.getElementById('main-content');
+      if (!main) return;
+      let index = 0;
+      const mark = () => {
+        for (const card of main.querySelectorAll('.post-entry:not([data-od-id])')) {
+          card.dataset.odId = `message-${++index}`;
+        }
+      };
+      mark();
+      new MutationObserver(mark).observe(main, { childList: true, subtree: true });
+    })();
+  </script>
+</body>
+</html>

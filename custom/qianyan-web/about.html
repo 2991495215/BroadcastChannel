@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#30764b">
+  <title>阅读说明 · 前沿消息</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%2330764b'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='sans-serif' font-size='36' fill='%23ffffff'%3E%E5%89%8D%3C/text%3E%3C/svg%3E">
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#main-content">跳到正文</a>
+  <div class="preview-note" role="note">设计预览 · 本地快照 · 未部署</div>
+  <header class="site-header" data-od-id="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="前沿消息首页" data-od-id="brand-home">
+        <span class="brand-mark" aria-hidden="true">前</span>
+        <span class="brand-text">前沿消息<small>公开消息聚合阅读</small></span>
+      </a>
+      <nav class="page-nav" aria-label="站点导航" data-od-id="site-nav">
+        <a href="index.html">消息流</a>
+        <a href="subscribe.html">订阅</a>
+        <a href="about.html" aria-current="page">关于</a>
+      </nav>
+      <div class="channel-links">
+        <button class="theme-toggle" type="button" aria-label="切换主题，当前：跟随系统" title="跟随系统；点击切换到白天" data-od-id="theme-toggle">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <g class="theme-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></g>
+            <path class="theme-system" d="M12 8a4 4 0 0 1 0 8Z" fill="currentColor" stroke="none"/>
+            <path class="theme-moon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+  <main id="main-content" class="doc-page" tabindex="-1" data-od-id="about-page">
+    <header class="doc-header" data-od-id="about-header">
+      <p class="eyebrow">关于 · 阅读说明</p>
+      <h1>阅读说明</h1>
+      <p class="doc-lede">前沿消息是一个中文消息聚合阅读站。这个页面说明怎么读、全量与精选的区别，以及正文与来源的边界。</p>
+    </header>
+    <section class="doc-section" data-od-id="about-reading">
+      <h2>怎么读</h2>
+      <p>打开消息流，按快照中的收录顺序向下阅读。标题指向原始来源；正文区域显示来源提供的摘要。长消息默认展开，超过一定长度时可以收起，再随时展开。</p>
+      <ul>
+        <li>搜索会匹配当前视图中的标题、来源、正文与标签。</li>
+        <li>每页数量可选 10、20、50 或 100 条，默认 20 条；选择会保存在本机浏览器。</li>
+        <li>分页上方是页序、条数与每页数量；下方是数字页码、回到最新和跳页输入。</li>
+        <li>浏览器返回键会回到上一个视图、搜索或页码状态。</li>
+      </ul>
+    </section>
+    <section class="doc-section" data-od-id="about-views">
+      <h2>全量与精选</h2>
+      <dl class="doc-terms">
+        <div><dt>全量消息</dt><dd>公开快照中的全部消息，按收录顺序展示。包含未评分或历史保留的条目，不按相关度筛选。</dd></div>
+        <div><dt>精选消息</dt><dd>从同一批消息中筛出相关度达到快照阈值的条目。阈值由快照提供，精选工具栏会显示当前值。</dd></div>
+      </dl>
+      <p>相关度是筛选条件，不是推荐背书。精选没有改变消息的来源，也没有补写正文；它只是把同一批消息中达到阈值的部分集中起来。</p>
+    </section>
+    <section class="doc-section" data-od-id="about-sources">
+      <h2>正文与来源边界</h2>
+      <p>列表中的“正文”是消息源提供的摘要字段，按快照中的内容完整显示。它可能本身已被来源截断，不等同于原文全文。标题和“阅读原文”始终指向原始来源；前沿消息只保留聚合所需的摘要与索引，原文以来源页面为准。</p>
+      <p>消息的版权归原作者与来源所有。这里做的是聚合、索引和阅读界面；如果来源内容有误、需要更正或删除，应以原始来源为准。</p>
+      <p>“全量”不等于“经过验证”，“精选”也不等于“事实核查”。相关度只描述快照的筛选结果，不构成对内容真实性、时效性或完整性的保证。</p>
+    </section>
+    <section class="doc-section" data-od-id="about-keyboard">
+      <h2>键盘与主题</h2>
+      <p>页面保留跳过链接和清晰的焦点环。按 Tab 可以依次访问导航、搜索、消息标题、正文操作和分页控件；在“全量消息 / 精选消息”标签上，方向键可切换视图，Home 和 End 跳到首尾标签。</p>
+      <p>页头的圆形主题按钮循环“跟随系统 / 白天 / 黑夜”，选择会保存在本机浏览器。暗色主题使用深绿炭黑与浅鼠尾草绿，不使用纯黑或发光效果。</p>
+    </section>
+    <section class="doc-section" data-od-id="about-preview">
+      <h2>预览与授权</h2>
+      <p>当前是设计预览，数据为本地公开快照，未部署。页面中的“立即同步”与 30 秒检查在这份预览里只会重新读取本地快照，不会连接新的后台。</p>
+      <p>界面沿用前沿消息现有 HTML、CSS、JavaScript 结构与 GPL-3.0 许可；原始版权归前沿消息项目作者所有。现有站点与订阅入口：</p>
+      <div class="doc-links">
+        <a href="https://ll.zinc.run/" target="_blank" rel="noopener noreferrer">现有站点 ↗</a>
+        <a href="https://ll.zinc.run/rss.xml" target="_blank" rel="noopener noreferrer">RSS ↗</a>
+        <a href="https://t.me/zinc_xiaoxi" target="_blank" rel="noopener noreferrer">Telegram ↗</a>
+        <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer">GPL-3.0 ↗</a>
+      </div>
+      <p class="doc-note">设计预览 · 数据为快照 · 未部署</p>
+    </section>
+  </main>
+  <footer class="site-footer" data-od-id="site-footer">
+    <div class="footer-inner">
+      <p class="footer-brand">前沿消息 <span>中文公开消息聚合阅读</span></p>
+      <nav class="footer-nav" aria-label="页脚导航">
+        <a href="index.html">消息流</a>
+        <a href="subscribe.html">订阅</a>
+        <a href="about.html">关于</a>
+        <a href="https://ll.zinc.run/" target="_blank" rel="noopener noreferrer">现有站点 ↗</a>
+        <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer">GPL-3.0 ↗</a>
+      </nav>
+      <p class="footer-note">设计预览 · 数据为快照 · 未部署</p>
+    </div>
+  </footer>
+</body>
+</html>

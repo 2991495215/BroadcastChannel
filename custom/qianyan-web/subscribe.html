@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#30764b">
+  <title>订阅 · 前沿消息</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='8' fill='%2330764b'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='sans-serif' font-size='36' fill='%23ffffff'%3E%E5%89%8D%3C/text%3E%3C/svg%3E">
+  <script src="theme.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip" href="#main-content">跳到正文</a>
+  <div class="preview-note" role="note">设计预览 · 本地快照 · 未部署</div>
+  <header class="site-header" data-od-id="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="前沿消息首页" data-od-id="brand-home">
+        <span class="brand-mark" aria-hidden="true">前</span>
+        <span class="brand-text">前沿消息<small>公开消息聚合阅读</small></span>
+      </a>
+      <nav class="page-nav" aria-label="站点导航" data-od-id="site-nav">
+        <a href="index.html">消息流</a>
+        <a href="subscribe.html" aria-current="page">订阅</a>
+        <a href="about.html">关于</a>
+      </nav>
+      <div class="channel-links">
+        <button class="theme-toggle" type="button" aria-label="切换主题，当前：跟随系统" title="跟随系统；点击切换到白天" data-od-id="theme-toggle">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <g class="theme-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></g>
+            <path class="theme-system" d="M12 8a4 4 0 0 1 0 8Z" fill="currentColor" stroke="none"/>
+            <path class="theme-moon" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+  <main id="main-content" class="doc-page" tabindex="-1" data-od-id="subscribe-page">
+    <header class="doc-header" data-od-id="subscribe-header">
+      <p class="eyebrow">订阅 · RSS 与 Telegram</p>
+      <h1>订阅前沿消息</h1>
+      <p class="doc-lede">两种公开入口，按你的阅读习惯选择。它们指向现有服务；这份设计预览不代管订阅，也不创建新的频道。</p>
+    </header>
+    <section class="doc-section" data-od-id="subscribe-rss">
+      <h2>RSS</h2>
+      <p>在任意支持 RSS 的阅读器里添加下面的地址。新的消息会按你阅读器的节奏出现，适合集中阅读。</p>
+      <a class="doc-address" href="https://ll.zinc.run/rss.xml" target="_blank" rel="noopener noreferrer">https://ll.zinc.run/rss.xml ↗</a>
+      <ol>
+        <li>复制订阅地址。</li>
+        <li>打开你常用的 RSS 阅读器，选择“添加订阅”。</li>
+        <li>粘贴地址并保存，之后按阅读器设置更新。</li>
+      </ol>
+      <p class="doc-note">RSS 由现有站点提供。本预览不托管订阅源，也不代表订阅状态。</p>
+    </section>
+    <section class="doc-section" data-od-id="subscribe-telegram">
+      <h2>Telegram</h2>
+      <p>在 Telegram 中打开公开频道并加入。适合希望即时接收消息、在手机上与频道同步阅读的人。</p>
+      <a class="doc-address" href="https://t.me/zinc_xiaoxi" target="_blank" rel="noopener noreferrer">https://t.me/zinc_xiaoxi ↗</a>
+      <ol>
+        <li>在浏览器或 Telegram 客户端中打开频道链接。</li>
+        <li>确认频道名称后加入。</li>
+        <li>按需关闭通知，保留频道作为消息入口。</li>
+      </ol>
+      <p class="doc-note">频道由现有服务维护。本预览不创建频道、机器人或新的账号体系。</p>
+    </section>
+    <section class="doc-section" data-od-id="subscribe-preview">
+      <h2>关于这份预览</h2>
+      <p>当前页面是设计预览，未部署。订阅链接指向现有公开入口；预览本身不收集邮箱、不提供账号，也不承诺实时抓取。</p>
+      <p class="doc-note">设计预览 · 数据为快照 · 未部署</p>
+    </section>
+  </main>
+  <footer class="site-footer" data-od-id="site-footer">
+    <div class="footer-inner">
+      <p class="footer-brand">前沿消息 <span>中文公开消息聚合阅读</span></p>
+      <nav class="footer-nav" aria-label="页脚导航">
+        <a href="index.html">消息流</a>
+        <a href="subscribe.html">订阅</a>
+        <a href="about.html">关于</a>
+        <a href="https://ll.zinc.run/" target="_blank" rel="noopener noreferrer">现有站点 ↗</a>
+        <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener noreferrer">GPL-3.0 ↗</a>
+      </nav>
+      <p class="footer-note">设计预览 · 数据为快照 · 未部署</p>
+    </div>
+  </footer>
+</body>
+</html>

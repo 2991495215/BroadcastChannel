@@ -15,3 +15,5 @@ __pycache__/
 output/
 node_modules/
 *.png
+qianyan-web/news-data/all.json
+qianyan-web/*preview.jpg
